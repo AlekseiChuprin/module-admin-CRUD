@@ -32,6 +32,11 @@ class Save extends \Magento\Backend\App\Action
     protected $resourcePost;
 
     /**
+     * @var \Study\Post\Model\PostRepository
+     */
+    protected $postRepository;
+
+    /**
      * Save constructor.
      * @param \Magento\Backend\App\Action\Context $context
      * @param \Magento\Framework\Controller\ResultFactory $resultFactory
@@ -45,7 +50,8 @@ class Save extends \Magento\Backend\App\Action
         \Magento\Framework\Controller\ResultFactory $resultFactory,
         MessageManagerInterface $messageManager,
         \Study\Post\Model\PostFactory $postFactory,
-        \Study\Post\Model\ResourceModel\Post $resourcePost
+        \Study\Post\Model\ResourceModel\Post $resourcePost,
+        \Study\Post\Model\PostRepository $postRepository
 
     )
     {
@@ -54,49 +60,73 @@ class Save extends \Magento\Backend\App\Action
         $this->messageManager = $messageManager;
         $this->postFactory = $postFactory;
         $this->resourcePost = $resourcePost;
+        $this->postRepository = $postRepository;
     }
 
     /**
      * @return \Magento\Framework\App\ResponseInterface|\Magento\Framework\Controller\ResultInterface
      * @throws \Magento\Framework\Exception\AlreadyExistsException
      */
+
+    /**
     public function execute()
     {
-        if($this->getRequest()->getParam('id')) {
-            $postId = $this->getRequest()->getParam('id');
-            try {
-                $post = $this->postFactory->create();
+        $redirect = $this->resultFactory->create('redirect');
+        $data = $this->getRequest()->getParams();
+        if(empty($data['id'])) {
+            unset($data['id']);
+        }
+        try {
+            $post = $this->postFactory->create();
+            $successMsg = __('Post saved successfully.');
+            if($postId = $this->getRequest()->getParam('id')){
                 $this->resourcePost->load($post, $postId);
-                $data = $this->getRequest()->getParams();
-                $post->addData($data);
-                $this->resourcePost->save($post);
-                $this->messageManager->addSuccessMessage(__('Post updated successfully.'));
-
-            } catch (ValidationException $e) {
-                $this->messageManager->addErrorMessage($e->getMessage());
-                $redirect = $this->resultFactory->create(\Magento\Framework\Controller\ResultFactory::TYPE_REDIRECT);
-                $redirect->setUrl("/team/index/edit/id/$postId");
-
-                return $redirect;
+                $successMsg = __('Post updated successfully.');
             }
+            $post->addData($data);
+            $this->resourcePost->save($post);
+            $this->messageManager->addSuccessMessage($successMsg);
 
-            return $this->resultFactory->create('redirect')->setPath('*/*/index');
+        } catch (ValidationException $e) {
+            $this->messageManager->addErrorMessage($e->getMessage());
+
+        } catch (\Exception $e) {
+            $this->messageManager->addErrorMessage(__('Something went wrong while data save'));
         }
 
-        else {
-            $data = $this->getRequest()->getParams();
-            try {
-                $post = $this->postFactory->create();
-                $this->resourcePost->save($post->addData($data));
-                $this->messageManager->addSuccessMessage(__('Saved successfully.'));
-
-            } catch (ValidationException $e) {
-                $this->messageManager->addErrorMessage($e->getMessage());
-
-            }
-
-            return $this->resultFactory->create('redirect')->setPath('*/*/index');
-        }
+        return $redirect->setPath('studypost/post/index');
 
     }
+    **/
+
+    /**
+     * @return \Magento\Framework\App\ResponseInterface|\Magento\Framework\Controller\ResultInterface
+     */
+    public function execute()
+    {
+        $redirect = $this->resultFactory->create('redirect');
+        $data = $this->getRequest()->getParams();
+        if(empty($data['id'])) {
+            unset($data['id']);
+        }
+        try {
+            $post = $this->postFactory->create();
+            $successMsg = __('Post saved successfully.');
+            if($postId = $this->getRequest()->getParam('id')){
+                $post = $this->postRepository->getById($postId);
+                $successMsg = __('Post updated successfully.');
+            }
+            $post->addData($data);
+            $this->postRepository->save($post);
+            $this->messageManager->addSuccessMessage($successMsg);
+        } catch (ValidationException $e) {
+            $this->messageManager->addErrorMessage($e->getMessage());
+
+        } catch (\Exception $e) {
+            $this->messageManager->addErrorMessage(__('Something went wrong while data save'));
+        }
+
+        return $redirect->setPath('studypost/post/index');
+    }
+
 }

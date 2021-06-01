@@ -13,4 +13,8 @@
             <argument name="resourceModel" xsi:type="string">Study\Post\Model\ResourceModel\Post</argument>
         </arguments>
     </virtualType>
+
+    <preference for="Study\Post\Api\PostRepositoryInterface" type="Study\Post\Model\PostRepository"/>
+    <preference for="Study\Post\Api\Data\PostInterface" type="Study\Post\Model\Post"/>
+    
 </config>
